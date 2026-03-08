@@ -1,6 +1,7 @@
 # szoftver-integralas-foci
 
 Endpoints
+```
 
 on connect 
 server -> client
@@ -67,3 +68,8 @@ playerControl: {
     y: float,
   }
 }
+
+
+client -> server
+shoot: server calculates it when a player touches the ball.
+```
