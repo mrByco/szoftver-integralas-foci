@@ -1,0 +1,1 @@
+# szoftver-integralas-foci
