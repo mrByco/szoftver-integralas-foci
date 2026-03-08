@@ -72,4 +72,14 @@ playerControl: {
 
 client -> server
 shoot: server calculates it when a player touches the ball.
+
+
+Map
+Width 20
+Height 15
+Center 0-0
+GoalBox height 4
+
+Player diameter 1
+Ball size 0.7
 ```
