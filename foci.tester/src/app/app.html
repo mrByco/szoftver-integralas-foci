@@ -1,0 +1,39 @@
+<main class="page">
+    <h1>Mini Soccer Client</h1>
+
+    <section class="connection">
+        <label for="server-url">Server URL</label>
+        <input id="server-url" [(ngModel)]="serverUrl" />
+        <button type="button" (click)="connect()">Connect</button>
+        <button type="button" (click)="disconnect()">Disconnect</button>
+    </section>
+
+    <section class="status">
+        <div>Status: {{ status }}</div>
+        <div>Your team: {{ team }}</div>
+        <div>Score: Red {{ redScore }} - {{ blueScore }} Blue</div>
+    </section>
+
+    <section class="controls">
+        <button type="button" (click)="move('up')">W</button>
+        <div class="middle-row">
+            <button type="button" (click)="move('left')">A</button>
+            <button type="button" (click)="move('stop')">Stop</button>
+            <button type="button" (click)="move('right')">D</button>
+        </div>
+        <button type="button" (click)="move('down')">S</button>
+    </section>
+
+    <section class="field" aria-label="Soccer field">
+        <div class="center-line"></div>
+
+        <div class="ball" [style.left.%]="getFieldX(ball().pos.x)" [style.top.%]="getFieldY(ball().pos.y)" title="Ball">
+        </div>
+
+        <div *ngFor="let player of players" class="player" [class.red]="player.team === 'red'"
+             [class.blue]="player.team === 'blue'" [style.left.%]="getFieldX(player.pos.x)"
+             [style.top.%]="getFieldY(player.pos.y)" [title]="player.id">
+            {{ player.id }}
+        </div>
+    </section>
+</main>
