@@ -2,25 +2,10 @@ import { CommonModule } from '@angular/common';
 import { Component, OnDestroy, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { io, Socket } from 'socket.io-client';
-
-type Team = 'red' | 'blue';
-
-interface Vector2 {
-  x: number;
-  y: number;
-}
-
-interface PlayerDto {
-  id: string;
-  pos: Vector2;
-  team: Team;
-  velocity: Vector2;
-}
-
-interface BallDto {
-  pos: Vector2;
-  velocity: Vector2;
-}
+import { GameAI } from './game-ai';
+import { GameStateQuery, IGameAI } from './game-ai.interface';
+import { PressingGameAI } from './game-ai-pressing';
+import { BallDto, ControlsPayload, PlayerDto, Team } from './game-models';
 
 interface Envelope<TType extends string, TPayload> {
   type: TType;
@@ -42,12 +27,6 @@ interface GamePointPayload {
   blue: number;
 }
 
-interface ControlsPayload {
-  controls: Array<{
-    velocity: Vector2;
-  }>;
-}
-
 const SOCKET_EVENTS = {
   message: 'message',
 } as const;
@@ -58,6 +37,7 @@ const MESSAGE_TYPES = {
   gameUpdate: 'game:update',
   gamePoint: 'game:point',
   playerControls: 'player:controls',
+  gameStartRequest: 'game:start-request',
 } as const;
 
 @Component({
@@ -67,15 +47,31 @@ const MESSAGE_TYPES = {
   styleUrl: './app.css',
 })
 export class App implements OnDestroy {
-  serverUrl = 'http://localhost:3000';
+  serverUrl = 'http://localhost:3001';
+  selectedAIId = 'balanced';
   status = 'Disconnected';
   team: Team | 'unknown' = 'unknown';
   redScore = 0;
   blueScore = 0;
   players: PlayerDto[] = [];
   ball = signal<BallDto>({ pos: { x: 0, y: 0 }, velocity: { x: 0, y: 0 } });
+  aiOptions: Array<{ id: string; label: string }> = [];
 
   private socket: Socket | null = null;
+  private gameStarted = false;
+  private readonly gameAIs = new Map<string, IGameAI>();
+
+  constructor() {
+    const balanced = new GameAI();
+    const pressing = new PressingGameAI();
+    this.gameAIs.set(balanced.id, balanced);
+    this.gameAIs.set(pressing.id, pressing);
+    this.aiOptions = [
+      { id: balanced.id, label: balanced.label },
+      { id: pressing.id, label: pressing.label },
+    ];
+    this.selectedAIId = balanced.id;
+  }
 
   connect(): void {
     this.disconnect();
@@ -92,6 +88,7 @@ export class App implements OnDestroy {
     this.socket.on('disconnect', () => {
       this.status = 'Disconnected';
       this.team = 'unknown';
+      this.gameStarted = false;
     });
 
     this.socket.on(SOCKET_EVENTS.message, (envelope: Envelope<string, unknown>) => {
@@ -104,22 +101,18 @@ export class App implements OnDestroy {
       return;
     }
 
+    this.gameStarted = false;
     this.socket.disconnect();
     this.socket = null;
     this.status = 'Disconnected';
     this.team = 'unknown';
   }
 
-  move(direction: 'up' | 'down' | 'left' | 'right' | 'stop'): void {
-    const speed = 1;
-    let velocity: Vector2 = { x: 0, y: 0 };
-
-    if (direction === 'up') velocity = { x: 0, y: -speed };
-    if (direction === 'down') velocity = { x: 0, y: speed };
-    if (direction === 'left') velocity = { x: -speed, y: 0 };
-    if (direction === 'right') velocity = { x: speed, y: 0 };
-
-    this.sendControls({ controls: [{ velocity }] });
+  requestStart(): void {
+    this.socket?.emit(SOCKET_EVENTS.message, {
+      type: MESSAGE_TYPES.gameStartRequest,
+      payload: {},
+    });
   }
 
   ngOnDestroy(): void {
@@ -134,6 +127,25 @@ export class App implements OnDestroy {
   getFieldY(y: number): number {
     const mapHeight = 15;
     return ((y + mapHeight / 2) / mapHeight) * 100;
+  }
+
+  private computeAIControls(): void {
+    if (!this.socket || this.team === 'unknown') return;
+
+    const team = this.team;
+    const strategy = this.gameAIs.get(this.selectedAIId);
+    if (!strategy) return;
+
+    const query: GameStateQuery = {
+      getTeam: () => team,
+      getPlayers: () => this.players,
+      getBall: () => this.ball(),
+    };
+
+    const payload = strategy.computeControls(query);
+    if (payload.controls.length > 0) {
+      this.sendControls(payload);
+    }
   }
 
   private sendControls(payload: ControlsPayload): void {
@@ -155,11 +167,20 @@ export class App implements OnDestroy {
       return;
     }
 
-    if (envelope.type === MESSAGE_TYPES.gameStart || envelope.type === MESSAGE_TYPES.gameUpdate) {
+    if (envelope.type === MESSAGE_TYPES.gameStart) {
       const payload = envelope.payload as UpdatePayload;
       this.players = payload.players;
       this.ball.set(payload.ball);
-      console.log(this.ball().pos)
+      this.gameStarted = true;
+      this.computeAIControls();
+      return;
+    }
+
+    if (envelope.type === MESSAGE_TYPES.gameUpdate) {
+      const payload = envelope.payload as UpdatePayload;
+      this.players = payload.players;
+      this.ball.set(payload.ball);
+      if (this.gameStarted) this.computeAIControls();
       return;
     }
 

@@ -2,19 +2,21 @@ import { GAME_CONSTANTS, GameState, Player, PlayerControl, Team, Vector2 } from 
 
 export class GameEngine {
     private state: GameState;
-    private nextPlayerId = 1;
+    private nextRedId = 0;
+    private nextBlueId = 100;
 
     constructor() {
         this.state = {
             players: [],
             ball: {
                 position: { x: 0, y: 0 },
-                velocity: { x: 0, y: 0 }
+                velocity: this.randomKickVelocity()
             },
             score: { red: 0, blue: 0 },
             goalScoredThisTick: false
         };
     }
+
 
     getState(): GameState {
         return {
@@ -34,7 +36,7 @@ export class GameEngine {
 
     addPlayer(team: Team): Player {
         const player: Player = {
-            id: `p${this.nextPlayerId++}`,
+            id: team === 'red' ? this.nextRedId++ : this.nextBlueId++,
             team,
             position: { x: 0, y: 0 },
             velocity: { x: 0, y: 0 }
@@ -46,8 +48,21 @@ export class GameEngine {
         return { ...player, position: { ...player.position }, velocity: { ...player.velocity } };
     }
 
-    removePlayer(playerId: string): void {
+    addTeam(team: Team): Player[] {
+        const players: Player[] = [];
+        for (let i = 0; i < 5; i++) {
+            players.push(this.addPlayer(team));
+        }
+        return players;
+    }
+
+    removePlayer(playerId: number): void {
         this.state.players = this.state.players.filter((player) => player.id !== playerId);
+        this.resetPlayerPositions();
+    }
+
+    removeTeam(team: Team): void {
+        this.state.players = this.state.players.filter((player) => player.team !== team);
         this.resetPlayerPositions();
     }
 
@@ -58,7 +73,7 @@ export class GameEngine {
                 continue;
             }
 
-            player.velocity = this.clampSpeed(control.velocity, GAME_CONSTANTS.playerMaxSpeed);
+            player.velocity = this.normalizeDirection(control.velocity, GAME_CONSTANTS.playerMaxSpeed);
         }
     }
 
@@ -82,14 +97,12 @@ export class GameEngine {
         this.detectGoalsOrBounceHorizontal();
     }
 
-    private clampSpeed(vector: Vector2, maxSpeed: number): Vector2 {
-        const speed = Math.hypot(vector.x, vector.y);
-        if (speed <= maxSpeed || speed === 0) {
-            return { x: vector.x, y: vector.y };
+    private normalizeDirection(vector: Vector2, speed: number): Vector2 {
+        const magnitude = Math.hypot(vector.x, vector.y);
+        if (magnitude === 0) {
+            return { x: 0, y: 0 };
         }
-
-        const ratio = maxSpeed / speed;
-        return { x: vector.x * ratio, y: vector.y * ratio };
+        return { x: (vector.x / magnitude) * speed, y: (vector.y / magnitude) * speed };
     }
 
     private clampPlayerPosition(player: Player): void {
@@ -175,7 +188,7 @@ export class GameEngine {
     private resetAfterGoal(): void {
         this.state.goalScoredThisTick = true;
         this.state.ball.position = { x: 0, y: 0 };
-        this.state.ball.velocity = { x: 0, y: 0 };
+        this.state.ball.velocity = this.randomKickVelocity();
 
         for (const player of this.state.players) {
             player.velocity = { x: 0, y: 0 };
@@ -184,22 +197,37 @@ export class GameEngine {
         this.resetPlayerPositions();
     }
 
+    private randomKickVelocity(): Vector2 {
+        const angle = Math.random() * 2 * Math.PI;
+        const speed = GAME_CONSTANTS.kickStrength;
+        return { x: Math.cos(angle) * speed, y: Math.sin(angle) * speed };
+    }
+
     private resetPlayerPositions(): void {
         const redPlayers = this.state.players.filter((player) => player.team === 'red');
         const bluePlayers = this.state.players.filter((player) => player.team === 'blue');
 
-        const place = (players: Player[], x: number): void => {
-            const spacing = 1.5;
-            const offset = (players.length - 1) / 2;
+        const placeHalfCircle = (players: Player[], startAngle: number, endAngle: number): void => {
+            if (players.length === 0) {
+                return;
+            }
+
+            const radius = 1.6;
+            const step = players.length === 1 ? 0 : (endAngle - startAngle) / (players.length - 1);
+
             players.forEach((player, index) => {
+                const angle = players.length === 1
+                    ? (startAngle + endAngle) / 2
+                    : startAngle + step * index;
+
                 player.position = {
-                    x,
-                    y: (index - offset) * spacing
+                    x: Math.cos(angle) * radius,
+                    y: Math.sin(angle) * radius
                 };
             });
         };
 
-        place(redPlayers, -5);
-        place(bluePlayers, 5);
+        placeHalfCircle(redPlayers, (2 * Math.PI) / 3, (4 * Math.PI) / 3);
+        placeHalfCircle(bluePlayers, -Math.PI / 3, Math.PI / 3);
     }
 }

@@ -13,20 +13,23 @@ describe('GameEngine', () => {
         expect(engine.getState().players).toHaveLength(2);
     });
 
-    it('clamps input velocity to max speed', () => {
+    it('normalizes input direction and scales to player max speed', () => {
         const engine = new GameEngine();
         const player = engine.addPlayer('red');
 
         engine.applyControls([
             {
                 id: player.id,
-                velocity: { x: 100, y: 0 }
+                velocity: { x: 3, y: 4 }  // magnitude 5, arbitrary non-unit vector
             }
         ]);
 
         const statePlayer = engine.getState().players.find((candidate) => candidate.id === player.id);
         expect(statePlayer).toBeDefined();
         expect(Math.hypot(statePlayer!.velocity.x, statePlayer!.velocity.y)).toBeCloseTo(GAME_CONSTANTS.playerMaxSpeed, 5);
+        // direction should be preserved: 3/5 = 0.6, 4/5 = 0.8
+        expect(statePlayer!.velocity.x).toBeCloseTo((3 / 5) * GAME_CONSTANTS.playerMaxSpeed, 5);
+        expect(statePlayer!.velocity.y).toBeCloseTo((4 / 5) * GAME_CONSTANTS.playerMaxSpeed, 5);
     });
 
     it('kicks ball when player touches it', () => {
@@ -68,6 +71,6 @@ describe('GameEngine', () => {
         expect(state.score.red).toBe(1);
         expect(state.goalScoredThisTick).toBe(true);
         expect(state.ball.position).toEqual({ x: 0, y: 0 });
-        expect(state.ball.velocity).toEqual({ x: 0, y: 0 });
+        expect(Math.hypot(state.ball.velocity.x, state.ball.velocity.y)).toBeGreaterThan(0);
     });
 });

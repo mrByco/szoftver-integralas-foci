@@ -6,7 +6,7 @@ export interface Vector2 {
 }
 
 export interface Player {
-    id: string;
+    id: number;
     team: Team;
     position: Vector2;
     velocity: Vector2;
@@ -30,7 +30,7 @@ export interface GameState {
 }
 
 export interface PlayerControl {
-    id: string;
+    id: number;
     velocity: Vector2;
 }
 
@@ -40,7 +40,7 @@ export const GAME_CONSTANTS = {
     goalBoxHeight: 4,
     playerRadius: 0.5,
     ballRadius: 0.35,
-    playerMaxSpeed: 6,
+    playerMaxSpeed: 5,
     ballFrictionPerTick: 0.98,
     kickStrength: 8
 } as const;

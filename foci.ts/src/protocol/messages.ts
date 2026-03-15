@@ -6,7 +6,7 @@ export interface Envelope<TType extends string = string, TPayload = unknown> {
 }
 
 export interface PlayerDto {
-    id: string;
+    id: number;
     team: Team;
     pos: Vector2;
     velocity: Vector2;
@@ -39,7 +39,7 @@ export interface EarnPointPayload {
 
 export interface ControlsPayload {
     controls: Array<{
-        id?: string;
+        id?: number;
         velocity: Vector2;
     }>;
 }
@@ -50,6 +50,7 @@ export const SOCKET_EVENTS = {
 
 export const MESSAGE_TYPES = {
     playerConnected: 'player:connected',
+    gameStartRequest: 'game:start-request',
     gameStart: 'game:start',
     gameUpdate: 'game:update',
     gamePoint: 'game:point',
@@ -62,4 +63,6 @@ export type OutboundEnvelope =
     | Envelope<typeof MESSAGE_TYPES.gameUpdate, UpdatePayload>
     | Envelope<typeof MESSAGE_TYPES.gamePoint, EarnPointPayload>;
 
-export type InboundEnvelope = Envelope<typeof MESSAGE_TYPES.playerControls, ControlsPayload>;
+export type InboundEnvelope =
+    | Envelope<typeof MESSAGE_TYPES.playerControls, ControlsPayload>
+    | Envelope<typeof MESSAGE_TYPES.gameStartRequest>;

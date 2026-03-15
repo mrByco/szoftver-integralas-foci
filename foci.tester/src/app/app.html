@@ -4,6 +4,10 @@
     <section class="connection">
         <label for="server-url">Server URL</label>
         <input id="server-url" [(ngModel)]="serverUrl" />
+        <label for="ai-selector">Game AI</label>
+        <select id="ai-selector" [(ngModel)]="selectedAIId">
+            <option *ngFor="let ai of aiOptions" [value]="ai.id">{{ ai.label }}</option>
+        </select>
         <button type="button" (click)="connect()">Connect</button>
         <button type="button" (click)="disconnect()">Disconnect</button>
     </section>
@@ -14,14 +18,8 @@
         <div>Score: Red {{ redScore }} - {{ blueScore }} Blue</div>
     </section>
 
-    <section class="controls">
-        <button type="button" (click)="move('up')">W</button>
-        <div class="middle-row">
-            <button type="button" (click)="move('left')">A</button>
-            <button type="button" (click)="move('stop')">Stop</button>
-            <button type="button" (click)="move('right')">D</button>
-        </div>
-        <button type="button" (click)="move('down')">S</button>
+    <section class="actions">
+        <button type="button" (click)="requestStart()">Request Start</button>
     </section>
 
     <section class="field" aria-label="Soccer field">

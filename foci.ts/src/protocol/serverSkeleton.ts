@@ -14,8 +14,9 @@ export interface BroadcastLike {
 }
 
 export class GameProtocolServerSkeleton {
-    private readonly socketToPlayerId = new Map<string, string>();
+    private readonly socketToTeam = new Map<string, Team>();
     private nextTeam: Team = 'red';
+    private gameStarted = false;
 
     constructor(
         private readonly engine: GameEngine,
@@ -24,8 +25,8 @@ export class GameProtocolServerSkeleton {
 
     handleConnection(socket: ClientSocketLike): void {
         const team = this.consumeNextTeam();
-        const player = this.engine.addPlayer(team);
-        this.socketToPlayerId.set(socket.id, player.id);
+        this.engine.addTeam(team);
+        this.socketToTeam.set(socket.id, team);
 
         socket.on(SOCKET_EVENTS.message, (envelope: InboundEnvelope) => {
             this.handleInboundEnvelope(socket.id, envelope);
@@ -33,6 +34,10 @@ export class GameProtocolServerSkeleton {
 
         socket.on(MESSAGE_TYPES.playerControls, (payload: ControlsPayload) => {
             this.handleControls(socket.id, payload);
+        });
+
+        socket.on(MESSAGE_TYPES.gameStartRequest, () => {
+            this.handleStartRequest(socket.id);
         });
 
         socket.on('disconnect', () => {
@@ -44,54 +49,79 @@ export class GameProtocolServerSkeleton {
             payload: { color: team }
         });
 
-        this.emitToSocket(socket, {
-            type: MESSAGE_TYPES.gameStart,
+        this.emitToAll({
+            type: MESSAGE_TYPES.gameUpdate,
             payload: toStateDto(this.engine.getState())
         });
     }
 
     handleInboundEnvelope(socketId: string, envelope: InboundEnvelope): void {
-        if (!envelope || envelope.type !== MESSAGE_TYPES.playerControls) {
+        if (!envelope) {
             return;
         }
 
-        this.handleControls(socketId, envelope.payload);
+        if (envelope.type === MESSAGE_TYPES.gameStartRequest) {
+            this.handleStartRequest(socketId);
+            return;
+        }
+
+        if (envelope.type === MESSAGE_TYPES.playerControls) {
+            this.handleControls(socketId, envelope.payload);
+        }
+    }
+
+    handleStartRequest(socketId: string): void {
+        if (this.gameStarted || !this.socketToTeam.has(socketId) || this.socketToTeam.size < 2) {
+            return;
+        }
+
+        this.gameStarted = true;
+        this.emitToAll({
+            type: MESSAGE_TYPES.gameStart,
+            payload: toStateDto(this.engine.getState())
+        });
     }
 
     handleControls(socketId: string, payload: ControlsPayload): void {
-        const playerId = this.socketToPlayerId.get(socketId);
-        if (!playerId || !payload || !Array.isArray(payload.controls) || payload.controls.length === 0) {
+        if (!this.gameStarted) {
             return;
         }
 
-        const ownControl = payload.controls.find((control) => control.id === playerId);
-        const selected = ownControl ?? payload.controls[0];
-        if (!selected || !selected.velocity || !Number.isFinite(selected.velocity.x) || !Number.isFinite(selected.velocity.y)) {
+        const team = this.socketToTeam.get(socketId);
+        if (!team || !payload || !Array.isArray(payload.controls) || payload.controls.length === 0) {
             return;
         }
 
-        this.engine.applyControls([
-            {
-                id: playerId,
-                velocity: {
-                    x: selected.velocity.x,
-                    y: selected.velocity.y
-                }
+        const teamPlayers = this.engine.getState().players.filter((p) => p.team === team);
+        const validControls = teamPlayers.flatMap((player) => {
+            const control = payload.controls.find((c) => c.id === player.id);
+            if (!control || !control.velocity || !Number.isFinite(control.velocity.x) || !Number.isFinite(control.velocity.y)) {
+                return [];
             }
-        ]);
+            return [{ id: player.id, velocity: { x: control.velocity.x, y: control.velocity.y } }];
+        });
+
+        if (validControls.length > 0) {
+            this.engine.applyControls(validControls);
+        }
     }
 
     handleDisconnect(socketId: string): void {
-        const playerId = this.socketToPlayerId.get(socketId);
-        if (!playerId) {
+        const team = this.socketToTeam.get(socketId);
+        if (!team) {
             return;
         }
 
-        this.socketToPlayerId.delete(socketId);
-        this.engine.removePlayer(playerId);
+        this.socketToTeam.delete(socketId);
+        this.gameStarted = false;
+        this.engine.removeTeam(team);
     }
 
     tick(deltaTime: number): void {
+        if (!this.gameStarted) {
+            return;
+        }
+
         const previousState = this.engine.getState();
         this.engine.tick(deltaTime);
         const state = this.engine.getState();
