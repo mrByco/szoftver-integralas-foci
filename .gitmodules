@@ -1,0 +1,3 @@
+[submodule "godot-football/addons/godot-socketio"]
+	path = godot-football/addons/godot-socketio
+	url = https://github.com/msabaeian/godot-socketio.git

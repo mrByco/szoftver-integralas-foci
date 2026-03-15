@@ -1,0 +1,86 @@
+[gd_scene format=3 uid="uid://w7ghu1vc3ar0"]
+
+[ext_resource type="Script" uid="uid://ox4lc5kjc1rt" path="res://socketio-handler.gd" id="1_mlf6e"]
+[ext_resource type="Script" uid="uid://bi2rhdd86toh3" path="res://addons/godot-socketio/addons/godot-socketio/socketio.gd" id="2_miq82"]
+[ext_resource type="Script" uid="uid://dav4bcxlmn0hf" path="res://gui-handler.gd" id="3_v1wow"]
+[ext_resource type="Script" uid="uid://cyjde72508r3" path="res://game-handler.gd" id="4_mixcd"]
+[ext_resource type="Script" uid="uid://cn23jfuepj5t4" path="res://team-handler.gd" id="5_mj2jn"]
+[ext_resource type="Script" uid="uid://kt6ttdvey1n3" path="res://item-handler.gd" id="6_kdryc"]
+[ext_resource type="Texture2D" uid="uid://bmdrwp311cgc3" path="res://red.svg" id="6_udeyl"]
+[ext_resource type="Texture2D" uid="uid://ocii3phi7rej" path="res://blue.svg" id="7_miq82"]
+[ext_resource type="Texture2D" uid="uid://ds3wsjssjywu1" path="res://ball.svg" id="8_miq82"]
+[ext_resource type="Texture2D" uid="uid://bcs2dby1w8ohx" path="res://field.png" id="10_miq82"]
+
+[node name="Node2D" type="Node2D" unique_id=104916533]
+
+[node name="Camera2D" type="Camera2D" parent="." unique_id=759792260]
+
+[node name="SocketIOHandler" type="Node" parent="." unique_id=748629346 node_paths=PackedStringArray("connectorPanel")]
+script = ExtResource("1_mlf6e")
+connectorPanel = NodePath("Panel")
+
+[node name="SocketIO" type="Node" parent="SocketIOHandler" unique_id=1740794686]
+script = ExtResource("2_miq82")
+base_url = "http://127.0.0.1:3001"
+path = "/socket.io"
+
+[node name="Panel" type="Panel" parent="SocketIOHandler" unique_id=1360720728 node_paths=PackedStringArray("lineEdit", "button")]
+offset_left = -554.0
+offset_top = -307.0
+offset_right = -45.0
+offset_bottom = -232.0
+script = ExtResource("3_v1wow")
+lineEdit = NodePath("LineEdit")
+button = NodePath("Button")
+
+[node name="Label" type="Label" parent="SocketIOHandler/Panel" unique_id=1036744297]
+layout_mode = 0
+offset_left = 2.0
+offset_top = 23.0
+offset_right = 117.0
+offset_bottom = 46.0
+text = "Server address"
+
+[node name="LineEdit" type="LineEdit" parent="SocketIOHandler/Panel" unique_id=1362825779]
+layout_mode = 0
+offset_left = 128.0
+offset_top = 18.0
+offset_right = 396.0
+offset_bottom = 54.0
+text = "http://127.0.0.1:3001"
+
+[node name="Button" type="Button" parent="SocketIOHandler/Panel" unique_id=1163291130]
+layout_mode = 0
+offset_left = 419.0
+offset_top = 17.0
+offset_right = 491.0
+offset_bottom = 55.0
+text = "Connect"
+
+[node name="GameHandler" type="Node2D" parent="." unique_id=933663456 node_paths=PackedStringArray("socketIOHandler", "redHandler", "blueHandler", "item")]
+script = ExtResource("4_mixcd")
+socketIOHandler = NodePath("../SocketIOHandler")
+playerNr = 5
+redHandler = NodePath("Red")
+blueHandler = NodePath("Blue")
+item = NodePath("../Item")
+ballDiamater = 0.75
+playerDiamater = 1.0
+
+[node name="Red" type="Node2D" parent="GameHandler" unique_id=2119988135]
+script = ExtResource("5_mj2jn")
+texture = ExtResource("6_udeyl")
+
+[node name="Blue" type="Node2D" parent="GameHandler" unique_id=277204473]
+script = ExtResource("5_mj2jn")
+texture = ExtResource("7_miq82")
+
+[node name="Item" type="Sprite2D" parent="." unique_id=2028741709]
+visible = false
+scale = Vector2(1.046875, 0.9921875)
+texture = ExtResource("8_miq82")
+script = ExtResource("6_kdryc")
+
+[node name="Field" type="Sprite2D" parent="." unique_id=292219510]
+z_index = -1
+texture = ExtResource("10_miq82")
