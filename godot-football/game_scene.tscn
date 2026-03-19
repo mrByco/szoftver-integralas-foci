@@ -1,14 +1,17 @@
 [gd_scene format=3 uid="uid://w7ghu1vc3ar0"]
 
 [ext_resource type="Script" uid="uid://ox4lc5kjc1rt" path="res://socketio-handler.gd" id="1_mlf6e"]
-[ext_resource type="Script" uid="uid://bi2rhdd86toh3" path="res://addons/godot-socketio/addons/godot-socketio/socketio.gd" id="2_miq82"]
+[ext_resource type="Script" uid="uid://cslw7odtcjibn" path="res://addons/godot-socketio/addons/godot-socketio/socketio.gd" id="2_miq82"]
 [ext_resource type="Script" uid="uid://dav4bcxlmn0hf" path="res://gui-handler.gd" id="3_v1wow"]
 [ext_resource type="Script" uid="uid://cyjde72508r3" path="res://game-handler.gd" id="4_mixcd"]
 [ext_resource type="Script" uid="uid://cn23jfuepj5t4" path="res://team-handler.gd" id="5_mj2jn"]
 [ext_resource type="Script" uid="uid://kt6ttdvey1n3" path="res://item-handler.gd" id="6_kdryc"]
 [ext_resource type="Texture2D" uid="uid://bmdrwp311cgc3" path="res://red.svg" id="6_udeyl"]
 [ext_resource type="Texture2D" uid="uid://ocii3phi7rej" path="res://blue.svg" id="7_miq82"]
+[ext_resource type="Script" uid="uid://bfgcd8wqyfqtq" path="res://point-panel.gd" id="8_j5hk1"]
 [ext_resource type="Texture2D" uid="uid://ds3wsjssjywu1" path="res://ball.svg" id="8_miq82"]
+[ext_resource type="Script" uid="uid://dcie86gkokege" path="res://goal_panel.gd" id="9_ueiaa"]
+[ext_resource type="Script" uid="uid://c6ll37woi23tl" path="res://game_logic.gd" id="10_daj04"]
 [ext_resource type="Texture2D" uid="uid://bcs2dby1w8ohx" path="res://field.png" id="10_miq82"]
 
 [node name="Node2D" type="Node2D" unique_id=104916533]
@@ -17,14 +20,14 @@
 
 [node name="SocketIOHandler" type="Node" parent="." unique_id=748629346 node_paths=PackedStringArray("connectorPanel")]
 script = ExtResource("1_mlf6e")
-connectorPanel = NodePath("Panel")
+connectorPanel = NodePath("ConnectPanel")
 
 [node name="SocketIO" type="Node" parent="SocketIOHandler" unique_id=1740794686]
 script = ExtResource("2_miq82")
 base_url = "http://127.0.0.1:3001"
 path = "/socket.io"
 
-[node name="Panel" type="Panel" parent="SocketIOHandler" unique_id=1360720728 node_paths=PackedStringArray("lineEdit", "button")]
+[node name="ConnectPanel" type="Panel" parent="SocketIOHandler" unique_id=1360720728 node_paths=PackedStringArray("lineEdit", "button")]
 offset_left = -554.0
 offset_top = -307.0
 offset_right = -45.0
@@ -33,7 +36,7 @@ script = ExtResource("3_v1wow")
 lineEdit = NodePath("LineEdit")
 button = NodePath("Button")
 
-[node name="Label" type="Label" parent="SocketIOHandler/Panel" unique_id=1036744297]
+[node name="Label" type="Label" parent="SocketIOHandler/ConnectPanel" unique_id=1036744297]
 layout_mode = 0
 offset_left = 2.0
 offset_top = 23.0
@@ -41,7 +44,7 @@ offset_right = 117.0
 offset_bottom = 46.0
 text = "Server address"
 
-[node name="LineEdit" type="LineEdit" parent="SocketIOHandler/Panel" unique_id=1362825779]
+[node name="LineEdit" type="LineEdit" parent="SocketIOHandler/ConnectPanel" unique_id=1362825779]
 layout_mode = 0
 offset_left = 128.0
 offset_top = 18.0
@@ -49,7 +52,7 @@ offset_right = 396.0
 offset_bottom = 54.0
 text = "http://127.0.0.1:3001"
 
-[node name="Button" type="Button" parent="SocketIOHandler/Panel" unique_id=1163291130]
+[node name="Button" type="Button" parent="SocketIOHandler/ConnectPanel" unique_id=1163291130]
 layout_mode = 0
 offset_left = 419.0
 offset_top = 17.0
@@ -57,15 +60,18 @@ offset_right = 491.0
 offset_bottom = 55.0
 text = "Connect"
 
-[node name="GameHandler" type="Node2D" parent="." unique_id=933663456 node_paths=PackedStringArray("socketIOHandler", "redHandler", "blueHandler", "item")]
+[node name="GameHandler" type="Node2D" parent="." unique_id=933663456 node_paths=PackedStringArray("socketIOHandler", "red_handler", "blue_handler", "item", "point_panel", "goal_panel", "game_logic")]
 script = ExtResource("4_mixcd")
 socketIOHandler = NodePath("../SocketIOHandler")
 playerNr = 5
-redHandler = NodePath("Red")
-blueHandler = NodePath("Blue")
+red_handler = NodePath("Red")
+blue_handler = NodePath("Blue")
 item = NodePath("../Item")
-ballDiamater = 0.75
-playerDiamater = 1.0
+ball_diamater = 0.75
+player_diamater = 1.0
+point_panel = NodePath("PointPanel")
+goal_panel = NodePath("GoalPanel")
+game_logic = NodePath("GameLogic")
 
 [node name="Red" type="Node2D" parent="GameHandler" unique_id=2119988135]
 script = ExtResource("5_mj2jn")
@@ -74,6 +80,71 @@ texture = ExtResource("6_udeyl")
 [node name="Blue" type="Node2D" parent="GameHandler" unique_id=277204473]
 script = ExtResource("5_mj2jn")
 texture = ExtResource("7_miq82")
+
+[node name="PointPanel" type="Panel" parent="GameHandler" unique_id=69941297 node_paths=PackedStringArray("red_label", "blue_label", "start_button")]
+offset_left = 483.0
+offset_top = -358.0
+offset_right = 641.0
+offset_bottom = -312.0
+script = ExtResource("8_j5hk1")
+red_label = NodePath("HBoxContainer/RedScore")
+blue_label = NodePath("HBoxContainer/BlueScore")
+start_button = NodePath("Button")
+
+[node name="HBoxContainer" type="HBoxContainer" parent="GameHandler/PointPanel" unique_id=1703336435]
+layout_mode = 0
+offset_left = 2.0
+offset_top = 1.0
+offset_right = 141.0
+offset_bottom = 44.0
+alignment = 1
+
+[node name="Red" type="Label" parent="GameHandler/PointPanel/HBoxContainer" unique_id=549345080]
+layout_mode = 2
+text = "Red"
+
+[node name="RedScore" type="Label" parent="GameHandler/PointPanel/HBoxContainer" unique_id=968680906]
+layout_mode = 2
+text = "0"
+
+[node name="hyphen" type="Label" parent="GameHandler/PointPanel/HBoxContainer" unique_id=39567673]
+layout_mode = 2
+text = "-"
+
+[node name="BlueScore" type="Label" parent="GameHandler/PointPanel/HBoxContainer" unique_id=885327679]
+layout_mode = 2
+text = "0"
+
+[node name="Blue" type="Label" parent="GameHandler/PointPanel/HBoxContainer" unique_id=191528622]
+layout_mode = 2
+text = "Blue"
+
+[node name="Button" type="Button" parent="GameHandler/PointPanel" unique_id=631563940]
+layout_mode = 0
+offset_left = 8.0
+offset_top = 63.0
+offset_right = 137.0
+offset_bottom = 110.0
+text = "Start"
+
+[node name="GoalPanel" type="Panel" parent="GameHandler" unique_id=1065171980]
+visible = false
+offset_left = -138.0
+offset_top = -36.0
+offset_right = 139.0
+offset_bottom = 41.0
+script = ExtResource("9_ueiaa")
+
+[node name="Label" type="Label" parent="GameHandler/GoalPanel" unique_id=1457823174]
+layout_mode = 0
+offset_right = 277.0
+offset_bottom = 69.0
+text = "Goal:"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="GameLogic" type="Node" parent="GameHandler" unique_id=221820362]
+script = ExtResource("10_daj04")
 
 [node name="Item" type="Sprite2D" parent="." unique_id=2028741709]
 visible = false

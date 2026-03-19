@@ -6,12 +6,15 @@ var game_pos: Vector2 = Vector2()
 var diameter: float = 1
 var fieldSize: float = 15
 
+var active: bool = false;
+
 func _ready() -> void:
 	set_diameter(diameter)
 
 func _process(delta: float) -> void:
-	game_pos += delta * speed 
-	calc_global()
+	if active:
+		game_pos += delta * speed 
+		calc_global()
 
 func set_pos_and_speed(posIn: Vector2, speedIn: Vector2 = Vector2(0,0)):
 	game_pos = posIn
@@ -30,3 +33,5 @@ func set_diameter(diamater: float):
 	self.diameter = diamater
 	self.scale = Vector2(0.42 * diameter, 0.42 * diameter)
 	
+func set_active(activeIn: bool):
+	active = activeIn

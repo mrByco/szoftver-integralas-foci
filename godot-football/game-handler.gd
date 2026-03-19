@@ -3,12 +3,17 @@ extends Node
 @export var socketIOHandler: SocketIOHandler
 
 @export var playerNr: int;
-@export var redHandler: TeamHandler;
-@export var blueHandler: TeamHandler;
+@export var red_handler: TeamHandler;
+@export var blue_handler: TeamHandler;
 @export var item: ItemHandler;
 
-@export var ballDiamater: float;
-@export var playerDiamater: float;
+@export var ball_diamater: float;
+@export var player_diamater: float;
+
+@export var point_panel: PointPanel;
+@export var goal_panel: GoalPanel;
+
+@export var game_logic: GameLogic;
 
 var ballItem: ItemHandler;
 
@@ -20,48 +25,63 @@ func _ready() -> void:
 	socketIOHandler.update_signal.connect(receive_update)
 	socketIOHandler.point_signal.connect(receive_update)
 	
+	game_logic.send_signal.connect(socketIOHandler.send_data)
+	
 	ballItem = item.duplicate() as ItemHandler;
 	ballItem.name = "Ball"
 	ballItem.visible = true
 	add_child(ballItem)
-	ballItem.set_diameter(ballDiamater)
+	ballItem.set_diameter(ball_diamater)
+	
+	point_panel.start_button.pressed.connect(func():
+		socketIOHandler.send_data("game:start-request", "", "/")
+	)
 	
 	var radius: float = 6
 	
 	for i in range(playerNr):
-		var newRedPlayer = item.duplicate() as ItemHandler	
-		newRedPlayer.name = str(i)
-		var angleRed: float = deg_to_rad(90 + 18 + 36 * i)
+		var new_red_player = item.duplicate() as ItemHandler	
+		new_red_player.name = str(i)
+		var angle_red: float = deg_to_rad(90 + 18 + 36 * i)
 	
-		newRedPlayer.visible = true
-		redHandler.add_child(newRedPlayer)
-		newRedPlayer.texture = redHandler.texture
-		newRedPlayer.set_pos_and_speed(Vector2(radius * cos(angleRed), radius * sin(angleRed)))
-		newRedPlayer.set_diameter(playerDiamater)
+		new_red_player.visible = true
+		red_handler.add_child(new_red_player)
+		new_red_player.texture = red_handler.texture
+		new_red_player.set_pos_and_speed(Vector2(radius * cos(angle_red), radius * sin(angle_red)))
+		new_red_player.set_diameter(player_diamater)
 		
-		var newBluePlayer = item.duplicate() as ItemHandler
-		newBluePlayer.name = str(i)
+		var new_blue_player = item.duplicate() as ItemHandler
+		new_blue_player.name = str(i)
 		var angleBlue: float = deg_to_rad(90 - 18 - 36 * i) 
 		
-		newBluePlayer.visible = true
-		blueHandler.add_child(newBluePlayer)
-		newBluePlayer.texture = blueHandler.texture		
-		newBluePlayer.set_pos_and_speed(Vector2(radius * cos(angleBlue), radius * sin(angleBlue)))
-		newBluePlayer.set_diameter(playerDiamater)
+		new_blue_player.visible = true
+		blue_handler.add_child(new_blue_player)
+		new_blue_player.texture = blue_handler.texture		
+		new_blue_player.set_pos_and_speed(Vector2(radius * cos(angleBlue), radius * sin(angleBlue)))
+		new_blue_player.set_diameter(player_diamater)
 	
 func receive_color(color: Dictionary):
 	myColor = color["color"]
 
 func receive_start(start_state: Dictionary):
-	pass
+	game_logic.set_active(true)
+	ballItem.set_active(true)	
+	red_handler.set_active(true)
+	blue_handler.set_active(true)
 	
 func receive_update(update_state: Dictionary):
-	pass
+	process_state_message(update_state)
+	game_logic.receive_game_state(update_state)
 		
 func receive_point(point_state: Dictionary):
-	pass
+	var team: String = point_state["team"]
 	
-func process_state_message(state: JSON):
+	if team != null and team != "":
+		pass
+	
+	point_panel.set_point(point_state)
+
+func process_state_message(state: Dictionary):
 	var players = state["players"]
 	
 	for player in players:
@@ -70,11 +90,12 @@ func process_state_message(state: JSON):
 		
 		var id: int = player["id"]
 		id = id % 10
+		id = id % 5
 		
 		if player["team"] == "red":
-			redHandler.set_player_data(id, position, speed)
+			red_handler.set_player_data(id, position, speed)
 		if player["team"] == "blue":
-			blueHandler.set_player_data(id, position, speed)
+			blue_handler.set_player_data(id, position, speed)
 		
 	var ball = state["ball"]	
 	var ballPos: Vector2 = Vector2(ball["pos"]["x"], ball["pos"]["y"])

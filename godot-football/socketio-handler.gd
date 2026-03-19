@@ -22,6 +22,7 @@ func _on_connect_pressed() -> void:
 	client.connect_socket()
 
 func _on_socket_connected(connect_message: String) -> void:
+	print("Connected")
 	connected = true
 	connectorPanel.visible = false	
 	
@@ -29,17 +30,19 @@ func _on_socket_disconnected() -> void:
 	connected = false
 	print("Disconnected")
 
-func _on_event_received(event: String, data: Variant, ns: String) -> void:
-	var dict: Dictionary = (data as Array)[0]
-	
+func _on_event_received(event: String, data: Variant, ns: String) -> void:	
 	if (data as Array).size() > 1:
 		print("LONG DATA: " + str(data))
 	
-	if event == "player:connected":
-		connect_signal.emit(dict)		
-	elif event == "game:start":
-		start_signal.emit(dict)		
-	elif event == "game:update":
-		update_signal.emit(dict)
-	elif event == "game:point":
-		point_signal.emit(dict)
+	for dict: Dictionary in (data as Array):		
+		if event == "player:connected":
+			connect_signal.emit(dict)		
+		elif event == "game:start":
+			start_signal.emit(dict)		
+		elif event == "game:update":
+			update_signal.emit(dict)
+		elif event == "game:point":
+			point_signal.emit(dict)
+
+func send_data(event: String, data: Variant, ns: String) -> void:
+	client.emit(event, data, ns)
