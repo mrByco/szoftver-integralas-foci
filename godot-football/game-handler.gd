@@ -17,8 +17,6 @@ extends Node
 
 var ballItem: ItemHandler;
 
-var myColor: String = ""
-
 func _ready() -> void:
 	socketIOHandler.connect_signal.connect(receive_color)
 	socketIOHandler.start_signal.connect(receive_start)
@@ -61,7 +59,11 @@ func _ready() -> void:
 		new_blue_player.set_diameter(player_diamater)
 	
 func receive_color(color: Dictionary):
-	myColor = color["color"]
+	game_logic.set_color(color["color"])
+	game_logic.set_active(false)
+	ballItem.set_active(false)	
+	red_handler.set_active(false)
+	blue_handler.set_active(false)
 
 func receive_start(start_state: Dictionary):
 	game_logic.set_active(true)

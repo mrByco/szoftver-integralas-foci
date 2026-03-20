@@ -5,12 +5,17 @@ var active: bool = false
 var teams: Dictionary;
 var ball: Dictionary
 
+var my_color: String;
+
 var start_time: float = 0;
 
 signal send_signal(event: String, data: Variant, ns: String)
 
 func set_active(active: bool):
 	self.active = active
+	
+func set_color(color: String):
+	my_color = color
 	
 func _ready() -> void:
 	teams["red"] = Dictionary()
