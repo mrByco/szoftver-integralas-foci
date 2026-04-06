@@ -63,6 +63,13 @@ export class GameEngine {
 
     removeTeam(team: Team): void {
         this.state.players = this.state.players.filter((player) => player.team !== team);
+        if (team === 'red') {
+            this.nextRedId = 0;
+        }
+        if (team === 'blue') {
+            this.nextBlueId = 100;
+        }
+        this.resetBallPosition();
         this.resetPlayerPositions();
     }
 
@@ -187,7 +194,7 @@ export class GameEngine {
 
     private resetAfterGoal(): void {
         this.state.goalScoredThisTick = true;
-        this.state.ball.position = { x: 0, y: 0 };
+        this.resetBallPosition();
         this.state.ball.velocity = this.randomKickVelocity();
 
         for (const player of this.state.players) {
@@ -195,6 +202,10 @@ export class GameEngine {
         }
 
         this.resetPlayerPositions();
+    }
+
+    private resetBallPosition(): void {
+        this.state.ball.position = { x: 0, y: 0 };
     }
 
     private randomKickVelocity(): Vector2 {
@@ -212,7 +223,7 @@ export class GameEngine {
                 return;
             }
 
-            const radius = 1.6;
+            const radius = 3;
             const step = players.length === 1 ? 0 : (endAngle - startAngle) / (players.length - 1);
 
             players.forEach((player, index) => {

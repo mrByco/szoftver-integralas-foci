@@ -1,44 +1,31 @@
 class_name GameLogic extends Node
 
 var active: bool = false
-
-var teams: Dictionary;
-var ball: Dictionary
-
-var start_time: float = 0;
+var players_state: Array = []
+var ball: Dictionary = {}
+var controlled_team: String = ""
+var ai_strategy = AIBalancedStrategy.new()
 
 signal send_signal(event: String, data: Variant, ns: String)
 
-func set_active(active: bool):
-	self.active = active
-	
-func _ready() -> void:
-	teams["red"] = Dictionary()
-	teams["blue"] = Dictionary()
-	start_time = Time.get_ticks_msec()
+func set_active(active_value: bool):
+	active = active_value
 
-func receive_game_state(game_state: Dictionary):	
-	for player in game_state["players"]:	
-		var team: String = player["team"]
-		var id: int = player["id"]
-		var pos: Dictionary = player["pos"]
-		var vel: Dictionary = player["velocity"]
-		teams[team][id % 10] = {"pos" : pos, "vel": vel }
-	
-	ball = game_state["ball"]
+func set_controlled_team(team: String):
+	controlled_team = team
 
-func create_velocity_dict(id: int, x: float, y: float) -> Dictionary: 
-	return {
-		"id": id,
-		"velocity" : {"x": x, "y": y}
-	}
+func receive_game_state(game_state: Dictionary):
+	players_state = game_state.get("players", [])
+	ball = game_state.get("ball", {})
 
-func _process(delta: float) -> void:
-	if self.active:
-		var x: float = sin(2 * PI / 10 * (Time.get_ticks_msec() - start_time))
-		var dict = create_velocity_dict(0, x, 0)
-		var input = []
-		input.append(dict)
-		
-		var outData = {"controls": input}
-		send_signal.emit("player:controls", outData, "/")
+func _process(_delta: float) -> void:
+	if not active:
+		return
+	if controlled_team == "":
+		return
+	if ball.is_empty():
+		return
+
+	var controls: Array = ai_strategy.compute_controls(controlled_team, players_state, ball)
+	var out_data: Dictionary = {"controls": controls}
+	send_signal.emit("player:controls", out_data, "/")

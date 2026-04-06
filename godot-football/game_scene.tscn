@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://w7ghu1vc3ar0"]
 
 [ext_resource type="Script" uid="uid://ox4lc5kjc1rt" path="res://socketio-handler.gd" id="1_mlf6e"]
-[ext_resource type="Script" uid="uid://cslw7odtcjibn" path="res://addons/godot-socketio/addons/godot-socketio/socketio.gd" id="2_miq82"]
+[ext_resource type="Script" uid="uid://sk8ifsc5ebh3" path="res://addons/godot-socketio/addons/godot-socketio/socketio.gd" id="2_miq82"]
 [ext_resource type="Script" uid="uid://dav4bcxlmn0hf" path="res://gui-handler.gd" id="3_v1wow"]
 [ext_resource type="Script" uid="uid://cyjde72508r3" path="res://game-handler.gd" id="4_mixcd"]
 [ext_resource type="Script" uid="uid://cn23jfuepj5t4" path="res://team-handler.gd" id="5_mj2jn"]
@@ -68,7 +68,7 @@ red_handler = NodePath("Red")
 blue_handler = NodePath("Blue")
 item = NodePath("../Item")
 ball_diamater = 0.75
-player_diamater = 1.0
+player_diamater = 0.5
 point_panel = NodePath("PointPanel")
 goal_panel = NodePath("GoalPanel")
 game_logic = NodePath("GameLogic")

@@ -23,7 +23,7 @@ func _ready() -> void:
 	socketIOHandler.connect_signal.connect(receive_color)
 	socketIOHandler.start_signal.connect(receive_start)
 	socketIOHandler.update_signal.connect(receive_update)
-	socketIOHandler.point_signal.connect(receive_update)
+	socketIOHandler.point_signal.connect(receive_point)
 	
 	game_logic.send_signal.connect(socketIOHandler.send_data)
 	
@@ -62,12 +62,14 @@ func _ready() -> void:
 	
 func receive_color(color: Dictionary):
 	myColor = color["color"]
+	game_logic.set_controlled_team(myColor)
 
 func receive_start(start_state: Dictionary):
 	game_logic.set_active(true)
 	ballItem.set_active(true)	
 	red_handler.set_active(true)
 	blue_handler.set_active(true)
+	#game_logic.set_controlled_team()
 	
 func receive_update(update_state: Dictionary):
 	process_state_message(update_state)

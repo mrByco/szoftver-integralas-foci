@@ -15,7 +15,7 @@ export interface BroadcastLike {
 
 export class GameProtocolServerSkeleton {
     private readonly socketToTeam = new Map<string, Team>();
-    private nextTeam: Team = 'red';
+    //private nextTeam: Team = 'red';
     private gameStarted = false;
 
     constructor(
@@ -49,6 +49,11 @@ export class GameProtocolServerSkeleton {
             payload: { color: team }
         });
 
+        this.emitGameUpdate();
+
+    }
+
+    emitGameUpdate() {
         this.emitToAll({
             type: MESSAGE_TYPES.gameUpdate,
             payload: toStateDto(this.engine.getState())
@@ -115,6 +120,8 @@ export class GameProtocolServerSkeleton {
         this.socketToTeam.delete(socketId);
         this.gameStarted = false;
         this.engine.removeTeam(team);
+        console.log(`Team ${team} has been removed due to disconnect`);
+        this.emitGameUpdate();
     }
 
     tick(deltaTime: number): void {
@@ -155,8 +162,17 @@ export class GameProtocolServerSkeleton {
     }
 
     private consumeNextTeam(): Team {
-        const team = this.nextTeam;
-        this.nextTeam = this.nextTeam === 'red' ? 'blue' : 'red';
-        return team;
+        let teams = new Set(this.socketToTeam.values());
+
+        console.log('Current teams:', teams);
+
+        if (!teams.has('red')) {
+            return 'red';
+        }
+        if (!teams.has('blue')) {
+            return 'blue';
+        }
+
+        throw new Error('No more teams available');
     }
 }
